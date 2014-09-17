@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <artifactId>umbrella</artifactId>
+    <groupId>com.ostensus</groupId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+
+  <name>Ostensus Connector</name>
+
+  <artifactId>connector</artifactId>
+
+  <properties>
+    <jdbc.driver>org.h2.Driver</jdbc.driver>
+    <jdbc.url>jdbc:h2:${project.basedir}/target/connector</jdbc.url>
+    <jdbc.user>sa</jdbc.user>
+    <jdbc.password></jdbc.password>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>com.ostensus</groupId>
+      <artifactId>sql-source</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
+
+    <!--
+    The jcl-over-slf4j dependency is required to keep Flyway from logging to srderr.
+    It looks like Flyway 3.1 might address this issue
+    -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jooq</groupId>
+      <artifactId>jooq</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.jolbox</groupId>
+      <artifactId>bonecp</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jasypt</groupId>
+      <artifactId>jasypt</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+
+    <plugins>
+
+      <plugin>
+        <groupId>org.flywaydb</groupId>
+        <artifactId>flyway-maven-plugin</artifactId>
+        <version>${flyway.version}</version>
+
+        <executions>
+          <execution>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>migrate</goal>
+            </goals>
+          </execution>
+        </executions>
+
+        <dependencies>
+
+          <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
+          </dependency>
+
+          <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>${commons.codec.version}</version>
+          </dependency>
+
+        </dependencies>
+
+        <configuration>
+          <url>${jdbc.url}</url>
+          <user>${jdbc.user}</user>
+          <password>${jdbc.password}</password>
+        </configuration>
+
+      </plugin>
+
+      <plugin>
+        <groupId>org.jooq</groupId>
+        <artifactId>jooq-codegen-maven</artifactId>
+        <version>${jooq.version}</version>
+
+        <executions>
+          <execution>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+          </execution>
+        </executions>
+
+        <dependencies>
+
+          <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
+          </dependency>
+
+          <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>${commons.codec.version}</version>
+          </dependency>
+
+        </dependencies>
+
+        <configuration>
+
+          <jdbc>
+            <driver>${jdbc.driver}</driver>
+            <url>${jdbc.url}</url>
+            <user>${jdbc.user}</user>
+            <password>${jdbc.password}</password>
+          </jdbc>
+
+          <generator>
+            <name>org.jooq.util.DefaultGenerator</name>
+            <database>
+              <name>org.jooq.util.h2.H2Database</name>
+              <includes>.*</includes>
+              <excludes></excludes>
+              <inputSchema>PUBLIC</inputSchema>
+            </database>
+            <target>
+              <packageName>com.ostensus.connector.schema</packageName>
+              <directory>target/generated-sources</directory>
+            </target>
+          </generator>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.12.4</version>
+        <configuration>
+          <!--<forkMode>never</forkMode>-->
+          <excludes>
+            <exclude>**/itest/**</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>2.12.4</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>2.6</version>
+        <configuration>
+          <header>${project.basedir}/../header.txt</header>
+          <excludes>
+            <exclude>**/pom.xml</exclude>
+            <exclude>**/README</exclude>
+            <exclude>src/test/resources/**</exclude>
+            <exclude>src/main/resources/**</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+    </plugins>
+
+  </build>
+
+</project>
