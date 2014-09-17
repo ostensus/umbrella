@@ -1,6 +1,8 @@
 Ostensus Umbrella
 -----------------
 
+[![Build Status](https://travis-ci.org/ostensus/umbrella.png?branch=master)](https://travis-ci.org/ostensus/umbrella)
+
 Provides a connector to the main Ostensus service.
 
 License
