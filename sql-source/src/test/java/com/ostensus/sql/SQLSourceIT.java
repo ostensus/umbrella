@@ -156,6 +156,16 @@ public class SQLSourceIT {
     expectedResults.add(new Answer("2016", "1de7e6e918e1e9e47a73edc5fda112a2"));
 
     assertEquals(expectedResults, handler.getAnswers());
+
+    // For good measure, assert that a filtered query including every predicate value produces the same result
+
+    ScanFilter filter = new SetFilter("region", ImmutableSet.of("NY", "TX", "VT", "NC", "AL"));
+    filters = ImmutableSet.of(filter);
+
+    handler = new BufferedPruningHandler();
+    source.scan(filters, parts, 127, handler);
+
+    assertEquals(expectedResults, handler.getAnswers());
   }
 
 
