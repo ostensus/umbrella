@@ -14,6 +14,7 @@ import org.jooq.impl.SQLDataType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.jooq.impl.DSL.*;
 
@@ -107,13 +108,18 @@ public abstract class SQLScanner {
             throw new InvalidMetadataException(msg);
           }
 
-          for (String value : setFilter.getValues()) {
-            this.filters.add(lhs_set.eq(value));
-            this.filters.add(rhs_set.eq(value));
-          }
+          Condition lhs = getCondition(setFilter, lhs_set);
+          Condition rhs = getCondition(setFilter, rhs_set);
+
+          this.filters.add(lhs);
+          this.filters.add(rhs);
         }
       }
     }
+  }
+
+  private Condition getCondition(SetFilter setFilter, Field<String> field) {
+    return setFilter.getValues().stream().map(field::eq).reduce((a, b) -> a.or(b)).get();
   }
 }
 
