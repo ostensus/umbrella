@@ -7,6 +7,7 @@
  */
 package com.ostensus.sql;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.jolbox.bonecp.BoneCPConfig;
 import com.jolbox.bonecp.BoneCPDataSource;
@@ -26,7 +27,9 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -55,6 +58,7 @@ public class SQLSourceIT {
     src.includeId("IMSI", SQLDataType.VARCHAR);
     src.includeVersion("CALLING_NUMBER", SQLDataType.VARCHAR);
     src.includePartition("TIMESTAMP", SQLDataType.DATE);
+    src.includeFilter("REGION", SQLDataType.VARCHAR);
 
     source = new SQLSource(ds, src, DialectSelector.getDialect(params.getType()));
 
@@ -87,6 +91,8 @@ public class SQLSourceIT {
   @Before
   public void seed() throws Exception {
 
+    String[] regions = new String[]{"NY", "TX", "VT", "NC", "AL"};
+
     int days = 1300;
 
     Connection connection = source.getConnection();
@@ -96,15 +102,16 @@ public class SQLSourceIT {
 
     LocalDateTime begin = LocalDateTime.of(2012, 8, 3, 22, 21, 31, 0);
 
-    String sql = "INSERT INTO call_records (imsi, timestamp, duration, calling_number, called_number) VALUES (?,?,?,?,?)";
+    String sql = "INSERT INTO call_records (imsi, timestamp, duration, region, calling_number, called_number) VALUES (?, ?,?,?,?,?)";
 
     for (int i = 0; i < days; i++) {
       String imsi = 230023741299234L + i + "";
       int duration = i;
+      String region = regions[i % regions.length];
       Timestamp ts = Timestamp.valueOf(begin.plusDays(i));
       String caller = 220082769234739L + i + "";
       String callee = 275617294783934L + i + "";
-      ctx.execute(sql, imsi, ts, duration, caller, callee);
+      ctx.execute(sql, imsi, ts, duration, region, caller, callee);
     }
 
     connection.commit();
@@ -112,7 +119,26 @@ public class SQLSourceIT {
   }
 
   @Test
-  public void shouldPartitionByDate() throws Exception {
+  public void filteredPartitioningByDate() throws Exception {
+    ScanFilter filter = new SetFilter("region", ImmutableSet.of("VT"));
+    ScanPartition datePartition = new DatePartition("timestamp", DateGranularityEnum.YEARLY, null);
+    Set<ScanFilter> filters = ImmutableSet.of(filter);
+    Set<ScanPartition> parts = ImmutableSet.of(datePartition);
+    BufferedPruningHandler handler = new BufferedPruningHandler();
+    source.scan(filters, parts, 127, handler);
+
+    Set<Answer> expectedResults = new LinkedHashSet<>();
+    expectedResults.add(new Answer("2012", "e3642411642e3ab57103d709b1aa6253"));
+    expectedResults.add(new Answer("2013", "4d1f18276689c4fef6a8578ec19ac82d"));
+    expectedResults.add(new Answer("2014", "2baa89b8d0c0f04edf65973b0ea04aa3"));
+    expectedResults.add(new Answer("2015", "19f6c9bb4665aedf5a648129d9fcca48"));
+    expectedResults.add(new Answer("2016", "a70788b3904c6e9b12a1bb73fe259fb0"));
+
+    assertEquals(expectedResults, handler.getAnswers());
+  }
+
+  @Test
+  public void unfilteredPartitioningByDate() throws Exception {
 
     ScanPartition datePartition = new DatePartition("timestamp", DateGranularityEnum.YEARLY, null);
 

@@ -95,8 +95,18 @@ public abstract class SQLScanner {
       for (ScanFilter filter : filters) {
         if (filter instanceof SetFilter) {
           SetFilter setFilter = (SetFilter) filter;
-          Field<String> lhs_set = (Field<String>) lhs.field(setFilter.getAttributeName());
-          Field<String> rhs_set = (Field<String>) rhs.field(setFilter.getAttributeName());
+
+          // TODO This shouldn't need to hard coded to be upper-cased
+          final String attributeName = setFilter.getAttributeName().toUpperCase();
+
+          Field<String> lhs_set = (Field<String>) lhs.field(attributeName);
+          Field<String> rhs_set = (Field<String>) rhs.field(attributeName);
+
+          if (lhs_set == null || rhs == null) {
+            String msg = String.format("Table (%s) has no field for filter attribute (%s)", sourceTable.getName(), attributeName);
+            throw new InvalidMetadataException(msg);
+          }
+
           for (String value : setFilter.getValues()) {
             this.filters.add(lhs_set.eq(value));
             this.filters.add(rhs_set.eq(value));

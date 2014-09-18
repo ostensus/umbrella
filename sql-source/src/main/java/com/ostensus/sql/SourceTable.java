@@ -17,7 +17,7 @@ import org.jooq.impl.TableImpl;
 
 public class SourceTable extends CustomTable {
 
-  private String id, version, partition;
+  private String id, version, partition, filter;
 
   public SourceTable(String name) {
     super(name);
@@ -56,6 +56,11 @@ public class SourceTable extends CustomTable {
 
   public void includePartition(String name, DataType<?> type) {
     partition = name;
+    createField(name, type, this);
+  }
+
+  public void includeFilter(String name, DataType<?> type) {
+    filter = name;
     createField(name, type, this);
   }
 }
