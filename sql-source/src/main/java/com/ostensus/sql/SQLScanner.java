@@ -101,18 +101,14 @@ public abstract class SQLScanner {
           final String attributeName = setFilter.getAttributeName().toUpperCase();
 
           Field<String> lhs_set = (Field<String>) lhs.field(attributeName);
-          Field<String> rhs_set = (Field<String>) rhs.field(attributeName);
 
-          if (lhs_set == null || rhs == null) {
+          if (lhs_set == null) {
             String msg = String.format("Table (%s) has no field for filter attribute (%s)", sourceTable.getName(), attributeName);
             throw new InvalidMetadataException(msg);
           }
 
           Condition lhs = getCondition(setFilter, lhs_set);
-          Condition rhs = getCondition(setFilter, rhs_set);
-
           this.filters.add(lhs);
-          this.filters.add(rhs);
         }
       }
     }
