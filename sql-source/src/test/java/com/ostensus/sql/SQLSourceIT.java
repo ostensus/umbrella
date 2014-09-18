@@ -168,9 +168,4 @@ public class SQLSourceIT {
     assertEquals(expectedResults, handler.getAnswers());
   }
 
-
-
-  private static String md5(String msg) {
-    return DigestUtils.md5Hex(msg);
-  }
 }
